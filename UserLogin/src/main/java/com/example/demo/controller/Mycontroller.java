@@ -12,14 +12,16 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.demo.Dao.UserLoginDao;
+import com.example.demo.ExceptionPojo.UserAlreadyExists;
 import com.example.demo.PasswordServices.PasswordService;
+import com.example.demo.Services.UserLoginService;
 import com.example.demo.entity.UserLogin;
 
 @RestController
 public class Mycontroller {
 	
 	@Autowired
-	UserLoginDao userloginpojo;
+	UserLoginService userloginservice;
 	
 	@Autowired
 	PasswordService pass;
@@ -27,30 +29,19 @@ public class Mycontroller {
 	@Autowired
 	PasswordEncoder passwordencoder;
 	
-	@RequestMapping(value = "/",method = RequestMethod.POST)
-	public String getuser(@RequestBody UserLogin user) {
-		if(user.isForgetpassword()) {
-			return "otp will be sent";
-		}
-		else {
-			BCryptPasswordEncoder bcrypt=(BCryptPasswordEncoder) pass.encoder();
-			user.setPassword(bcrypt.encode(user.getPassword()));
-			userloginpojo.save(user);
-			return "user saved";
-		}
+	@RequestMapping(value = "/register",method = RequestMethod.POST)
+	public String getnewuser(@RequestBody UserLogin user) throws Exception {
+		return userloginservice.getnewuser(user);
 	}
 	
 	@RequestMapping(value="/login",method = RequestMethod.GET)
-	public void getpassword(@RequestBody UserLogin userpojo)throws Exception {
-		UserLogin user=userloginpojo.getReferenceById(userpojo.getEmail());
-		if(user!=null) {
-			if(passwordencoder.matches(userpojo.getPassword(),user.getPassword())) {
-				System.out.println("matched");
-			}
-			else {
-				System.out.println("not matched");
-			}
-		}
+	public String getpassword(@RequestBody UserLogin user) throws Exception{
+		return userloginservice.getAuthecastion(user);
+	}
 	
+	@RequestMapping(value="/forgetpassword",method =  RequestMethod.POST)
+	public String getforgetpassword(@RequestBody UserLogin user) {
+		System.out.println("hello");
+		return userloginservice.getforgetpassword(user);
 	}
 }

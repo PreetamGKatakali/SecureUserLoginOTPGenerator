@@ -20,8 +20,9 @@ public class Config {
 			.formLogin().disable()
 			.securityMatcher("/**")
 			.authorizeHttpRequests(registry->registry
-					.requestMatchers("/").permitAll()
+					.requestMatchers("/register").permitAll()
 					.requestMatchers("/login").permitAll()
+					.requestMatchers("/forgetpassword").permitAll()
 			);
 		
 		return http.build();
