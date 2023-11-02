@@ -23,6 +23,7 @@ public class Config {
 					.requestMatchers("/register").permitAll()
 					.requestMatchers("/login").permitAll()
 					.requestMatchers("/forgetpassword").permitAll()
+					.requestMatchers("/{authToken}/setnewpassword").permitAll()
 			);
 		
 		return http.build();

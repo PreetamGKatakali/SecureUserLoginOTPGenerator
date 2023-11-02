@@ -1,5 +1,8 @@
 package com.example.demo.Services;
 
+import java.security.SecureRandom;
+import java.util.Random;
+
 import org.springframework.aop.ThrowsAdvice;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -8,10 +11,14 @@ import org.springframework.stereotype.Service;
 
 import com.example.demo.Dao.UserAuthTokenDao;
 import com.example.demo.Dao.UserLoginDao;
+import com.example.demo.ExceptionPojo.InvalidUserEmail;
 import com.example.demo.ExceptionPojo.UserAlreadyExists;
 import com.example.demo.ExceptionPojo.UserEmailOrPasswordInvalid;
 import com.example.demo.PasswordServices.PasswordService;
+import com.example.demo.Pojo.UserNewPassword;
+import com.example.demo.entity.UserAuthToken;
 import com.example.demo.entity.UserLogin;
+import com.example.demo.responcePojo.UserAuthTokenResponce;
 
 @Service
 public class UserLoginService {
@@ -24,6 +31,9 @@ public class UserLoginService {
 	
 	@Autowired
 	PasswordEncoder passwordencoder;
+	
+	
+	UserAuthToken userauthtoken;
 	
 	@Autowired
 	PasswordService pass;
@@ -47,7 +57,7 @@ public class UserLoginService {
 		if(useremail!=null) {
 			if(passwordencoder.matches(user.getPassword(),useremail.getPassword())) {
 				System.out.println("matched");
-				return "matched";
+				return "login successs";
 			}
 		}
 		else {
@@ -56,14 +66,48 @@ public class UserLoginService {
 		throw new UserEmailOrPasswordInvalid("Invalid Email or Password");
 	}
 	
-	public String getforgetpassword(UserLogin user) {
+	public UserAuthTokenResponce getforgetpassword(UserLogin user) throws InvalidUserEmail {
 		UserLogin useremail=userlogindao.getReferenceById(user.getEmail());
 		if(user.isForgetpassword() && useremail!=null) {
-			userauthtokendao.getAuthToken("DKF-TOkenGThYd");
-			return "done c the db";
+//			adding the auto genrate 
+//			SecureRandom random=new SecureRandom();
+//			byte[] values=new byte[7];
+//			random.nextBytes(values);
+//			String token=values.toString();
+			String CharSet = "abcdefghijkmnopqrstuvwxyzABCDEFGHJKLMNOPQRSTUVWXYZ234567890";
+		    String token = "";
+		    for (int a = 1; a <= 5; a++) {
+		        token += CharSet.charAt(new Random().nextInt(CharSet.length()));
+		    }
+			
+			
+			
+			userauthtokendao.getAuthToken(token); // this is adding the token 
+			
+			UserAuthTokenResponce authtoken=new UserAuthTokenResponce();
+			authtoken.setAuthToken(token);
+			return authtoken;
+			
 		}
 		else {
-			return "No user found";
+			throw new InvalidUserEmail("Invalid user email");
 		}
+	}
+	
+	public String setnewpassword(String authToken,UserNewPassword usernewpassword) {
+		boolean usertoken=userauthtokendao.existsById(authToken);
+		UserLogin useremail=userlogindao.getReferenceById(usernewpassword.getEmail());
+		if(usertoken && useremail!=null &&((usernewpassword.getConfirmPassword()).equals(usernewpassword.getNewPassword()))) {
+			UserLogin user=userlogindao.getReferenceById(usernewpassword.getEmail());
+			BCryptPasswordEncoder bcrypt=(BCryptPasswordEncoder) pass.encoder();
+			user.setPassword(bcrypt.encode(usernewpassword.getNewPassword()));
+			userlogindao.save(user);
+			userauthtokendao.deleteAll();
+			return "updated";
+		}
+		else {
+			return "not updated";
+		}
+		
 	}
 }
